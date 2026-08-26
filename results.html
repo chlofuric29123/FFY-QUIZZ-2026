@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Direct Clémence — FFY</title>
+<title>Résultats finaux — FFY</title>
 <link rel="stylesheet" href="style.css">
 <style>
 .awards-wrap{margin-bottom:34px}
@@ -16,34 +16,24 @@
 <body>
 <div class="wrap">
   <div class="hero">
-    <div class="big">📊⚡</div>
-    <h1>FFY — Direct</h1>
-    <p>Accès Clémence</p>
+    <div class="big">🏆🎉</div>
+    <h1>Résultats FFY</h1>
+    <p>Le palmarès final</p>
   </div>
 
-  <section id="lock" class="card">
-    <div class="center">
-      <div class="big">🔐</div>
-      <h2>Accès Clémence</h2>
+  <section class="card">
+    <div id="gate"></div>
+    <div id="content" class="hidden">
+      <div id="summary"></div>
+      <div id="awards"></div>
+      <div class="separator"></div>
+      <h2>📊 Détail des questions</h2>
+      <p class="note">Les votes question par question.</p>
+      <div id="details"></div>
+      <div class="center" style="margin-top:24px">
+        <a href="index.html">← Retour au questionnaire</a>
+      </div>
     </div>
-    <input id="pin" type="password" placeholder="Code d'accès">
-    <button id="unlock" class="primary" style="width:100%;margin-top:12px">Ouvrir le direct</button>
-  </section>
-
-  <section id="live" class="card hidden">
-    <div id="summary"></div>
-
-    <div class="live-note">
-      ⚡ Les Awards et les votes se mettent à jour immédiatement à chaque réponse.
-    </div>
-
-    <div id="awards"></div>
-
-    <div class="separator"></div>
-
-    <h2>📊 Résultats question par question</h2>
-    <p class="note">Chaque clic apparaît ici sans attendre la fin du quiz.</p>
-    <div id="details"></div>
   </section>
 </div>
 
@@ -52,8 +42,8 @@
 <script src="firebase-config.js"></script>
 <script src="data.js"></script>
 <script>
-const LIVE_PIN='clemence2026';
 const {questions}=window.QUIZ_DATA;
+const allowed=localStorage.getItem('ffy_completed')==='true';
 firebase.initializeApp(window.FIREBASE_CONFIG);
 const db=firebase.database();
 const el=id=>document.getElementById(id);
@@ -138,54 +128,47 @@ function awardsHTML(arr, liveMode=false){
 }
 
 
-el('unlock').onclick=()=>{
-  if(el('pin').value!==LIVE_PIN){
-    alert('Code incorrect');
-    return;
-  }
-  el('lock').classList.add('hidden');
-  el('live').classList.remove('hidden');
+if(!allowed){
+  el('gate').innerHTML=`<div class="center">
+    <div class="big">🔒</div>
+    <h2>Termine d’abord le quiz</h2>
+    <p class="note">Les résultats sont visibles uniquement après avoir répondu à toutes les questions.</p>
+    <a class="btn primary" href="index.html" style="display:block;margin-top:16px">Retour au quiz</a>
+  </div>`;
+} else {
+  el('gate').classList.add('hidden');
+  el('content').classList.remove('hidden');
   db.ref('ffy2026/submissions').on('value',s=>render(s.val()||{}));
-};
+}
 
 function render(subs){
-  const arr=Object.values(subs||{});
-  const started=arr.filter(s=>s.answers&&Object.keys(s.answers).length>0).length;
-  const completed=arr.filter(s=>s.completed===true).length;
+  const arr=Object.values(subs||{}).filter(s=>s.completed===true);
+  const n=arr.length;
 
-  el('summary').innerHTML=`<h2>${started} participant${started>1?'s':''} en cours · ${completed} terminé${completed>1?'s':''}</h2>
-    <p class="note">🟢 Synchronisation en direct</p>`;
-
-  el('awards').innerHTML=awardsHTML(arr,true);
+  el('summary').innerHTML=`<h2>${n} participant${n>1?'s':''} a${n>1?'ont':' '} terminé</h2>`;
+  el('awards').innerHTML=awardsHTML(arr,false);
 
   let html='';
   questions.forEach((q,qi)=>{
     const counts={};
-    let answered=0;
     arr.forEach(s=>{
       const a=s.answers?.[qi];
-      if(a){
-        counts[a]=(counts[a]||0)+1;
-        answered++;
-      }
+      if(a) counts[a]=(counts[a]||0)+1;
     });
     const ranked=Object.entries(counts).sort((a,b)=>b[1]-a[1]);
 
-    html+=`<div class="result-card"><h3>${qi+1}. ${q.text}</h3>
-      <div class="small">${answered} réponse${answered>1?'s':''} reçue${answered>1?'s':''}</div>`;
-
+    html+=`<div class="result-card"><h3>${qi+1}. ${q.text}</h3>`;
     if(!ranked.length){
-      html+=`<div class="small" style="margin-top:8px">Pas encore de vote.</div>`;
+      html+=`<div class="small">Pas encore de résultat final.</div>`;
     } else {
       ranked.forEach(([name,c])=>{
-        const pct=answered?Math.round(c/answered*100):0;
+        const pct=n?Math.round(c/n*100):0;
         html+=`<div class="row"><span>${name}</span><strong>${c} · ${pct}%</strong></div>
                <div class="bar"><span style="width:${pct}%"></span></div>`;
       });
     }
     html+='</div>';
   });
-
   el('details').innerHTML=html;
 }
 </script>
