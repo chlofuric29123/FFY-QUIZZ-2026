@@ -1,98 +1,13 @@
-<!doctype html>
-<html lang="fr">
-<head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Qui est le plus ? — Week-end</title>
-<link rel="stylesheet" href="style.css">
-</head>
-<body>
-<div class="wrap">
-  <div class="hero">
-    <div class="big">🏆🍻</div>
-    <div style="font-size:18px;font-weight:900;letter-spacing:.18em;margin-bottom:8px;">FFY</div>
-    <h1>Qui est le plus ?</h1>
-    <p>Édition week-end — vote sans pitié 😈</p>
-  </div>
-
-  <section id="start" class="card">
-    <h2>Avant de commencer</h2>
-    <p class="note">Choisis ton prénom. Une réponse par question. Les résultats seront dévoilés à la fin.</p>
-    <select id="voter" style="width:100%;padding:14px;border-radius:14px;background:#111426;color:white;border:1px solid rgba(255,255,255,.1);font-size:16px"></select>
-    <button id="startBtn" class="primary" style="width:100%;margin-top:14px">Commencer 🔥</button>
-    <div id="mode" class="badge"></div>
-    <div class="center live-link-start" style="margin-top:14px">
-      <a href="results.html" style="color:#fff;text-decoration:none;font-size:17px;opacity:.9">
-        Voir les résultats en direct
-      </a>
-    </div>
-  </section>
-
-  <section id="quiz" class="card hidden">
-    <div class="progress"><div id="bar"></div></div>
-    <div class="count" id="count"></div>
-    <div class="question" id="question"></div>
-    <div class="people" id="people"></div>
-    <div class="actions">
-      <button id="prev" class="secondary">← Retour</button>
-      <button id="next" class="primary">Suivant →</button>
-    </div>
-    <div class="center" style="margin-top:22px">
-      <a href="results.html" style="color:#fff;text-decoration:none;font-size:17px;opacity:.9">
-        Voir les résultats en direct
-      </a>
-    </div>
-  </section>
-
-  <section id="done" class="card hidden center">
-    <div class="big">🥳</div>
-    <h2>C’est dans la boîte !</h2>
-    <p>Merci pour tes votes. Maintenant, assume-les 😏</p>
-    <p class="note">Les résultats sont accessibles sur la page organisateur.</p>
-  </section>
-</div>
-
-<script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-database-compat.js"></script>
-<script src="firebase-config.js"></script><script src="data.js"></script>
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>FFY — Qui est le plus ?</title><link rel="stylesheet" href="style.css"></head><body><div class="wrap">
+<div class="hero"><div class="big">🏆🍻</div><div style="font-size:18px;font-weight:900;letter-spacing:.18em;margin-bottom:8px;">FFY</div><h1>Qui est le plus ?</h1><p>Édition week-end — vote sans pitié 😈</p></div>
+<section id="start" class="card"><h2>Avant de commencer</h2><p class="note">Choisis ton prénom. Tes réponses sont enregistrées immédiatement.</p><select id="voter" style="width:100%;padding:14px;border-radius:14px;background:#111426;color:white;border:1px solid rgba(255,255,255,.1);font-size:16px"></select><button id="startBtn" class="primary" style="width:100%;margin-top:14px">Commencer 🔥</button><div id="mode" class="badge"></div></section>
+<section id="quiz" class="card hidden"><div class="progress"><div id="bar"></div></div><div class="count" id="count"></div><div class="question" id="question"></div><div class="people" id="people"></div><div class="actions"><button id="prev" class="secondary">← Retour</button><button id="next" class="primary">Suivant →</button></div><p class="note center" style="margin-top:18px">Les résultats seront visibles à la fin du quiz.</p></section>
+<section id="done" class="card hidden center"><div class="big">🥳</div><h2>C’est dans la boîte !</h2><p>Tes réponses ont bien été enregistrées.</p><a class="btn primary" href="results.html" style="display:block;margin-top:18px">Voir les résultats finaux 🏆</a></section></div>
+<script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-database-compat.js"></script><script src="firebase-config.js"></script><script src="data.js"></script>
 <script>
-const {participants,questions}=window.QUIZ_DATA;
-const firebaseReady = window.FIREBASE_CONFIG && window.FIREBASE_CONFIG.apiKey && window.FIREBASE_CONFIG.databaseURL;
-let db=null;
-if(firebaseReady){ firebase.initializeApp(window.FIREBASE_CONFIG); db=firebase.database(); }
-document.getElementById('mode').textContent=firebaseReady?'Votes en ligne activés ✅':'Mode démo local ⚠️';
-const voter=document.getElementById('voter');
-voter.innerHTML='<option value="">— Ton prénom —</option>'+participants.map(p=>`<option>${p}</option>`).join('');
-let idx=0, answers={}, chosenVoter='';
-const el=id=>document.getElementById(id);
-function render(){
-  el('count').textContent=`Question ${idx+1} / ${questions.length}`;
-  el('bar').style.width=`${((idx+1)/questions.length)*100}%`;
-  el('question').textContent=questions[idx].text;
-  const opts=questions[idx].only || participants;
-  el('people').innerHTML=opts.map(p=>`<button class="${answers[idx]===p?'selected':''}" data-p="${p}">${p}</button>`).join('');
-  [...el('people').querySelectorAll('button')].forEach(b=>b.onclick=()=>{answers[idx]=b.dataset.p;render();});
-  el('prev').disabled=idx===0;
-  el('next').textContent=idx===questions.length-1?'Envoyer mes votes ✅':'Suivant →';
-}
-el('startBtn').onclick=()=>{
-  chosenVoter=voter.value;
-  if(!chosenVoter){alert('Choisis ton prénom 🙂');return}
-  el('start').classList.add('hidden');el('quiz').classList.remove('hidden');render();
-};
-el('prev').onclick=()=>{if(idx>0){idx--;render()}};
-el('next').onclick=async()=>{
- if(!answers[idx]){alert('Choisis quelqu’un avant de continuer 😈');return}
- if(idx<questions.length-1){idx++;render();return}
- if(Object.keys(answers).length!==questions.length){alert('Il manque une réponse.');return}
- const payload={voter:chosenVoter,answers,submittedAt:Date.now()};
- try{
-   if(db){ await db.ref('ffy2026/submissions/'+chosenVoter).set(payload); }
-   else{
-     const all=JSON.parse(localStorage.getItem('quiz_submissions')||'{}'); all[chosenVoter]=payload;
-     localStorage.setItem('quiz_submissions',JSON.stringify(all));
-   }
-   el('quiz').classList.add('hidden');el('done').classList.remove('hidden');
- }catch(e){alert("Impossible d'envoyer les votes. Vérifie la connexion.");console.error(e)}
-};
-</script>
-</body></html>
+const {participants,questions}=window.QUIZ_DATA;const firebaseReady=window.FIREBASE_CONFIG&&window.FIREBASE_CONFIG.apiKey&&window.FIREBASE_CONFIG.databaseURL;let db=null;if(firebaseReady){firebase.initializeApp(window.FIREBASE_CONFIG);db=firebase.database()}
+const voter=document.getElementById('voter');voter.innerHTML='<option value="">— Ton prénom —</option>'+participants.map(p=>`<option>${p}</option>`).join('');let idx=0,answers={},chosenVoter='';const el=id=>document.getElementById(id);el('mode').textContent=firebaseReady?'Votes en ligne activés ✅':'Mode démo local ⚠️';
+function render(){el('count').textContent=`Question ${idx+1} / ${questions.length}`;el('bar').style.width=`${((idx+1)/questions.length)*100}%`;el('question').textContent=questions[idx].text;const opts=questions[idx].only||participants;el('people').innerHTML=opts.map(p=>`<button class="${answers[idx]===p?'selected':''}" data-p="${p}">${p}</button>`).join('');[...el('people').querySelectorAll('button')].forEach(b=>b.onclick=async()=>{answers[idx]=b.dataset.p;render();if(db&&chosenVoter){await db.ref(`ffy2026/submissions/${chosenVoter}/answers/${idx}`).set(b.dataset.p);await db.ref(`ffy2026/submissions/${chosenVoter}/voter`).set(chosenVoter);await db.ref(`ffy2026/submissions/${chosenVoter}/lastUpdated`).set(firebase.database.ServerValue.TIMESTAMP)}});el('prev').disabled=idx===0;el('next').textContent=idx===questions.length-1?'Terminer ✅':'Suivant →'}
+el('startBtn').onclick=()=>{chosenVoter=voter.value;if(!chosenVoter){alert('Choisis ton prénom 🙂');return}localStorage.setItem('ffy_voter',chosenVoter);el('start').classList.add('hidden');el('quiz').classList.remove('hidden');render()};
+el('prev').onclick=()=>{if(idx>0){idx--;render()}};el('next').onclick=async()=>{if(!answers[idx]){alert('Choisis quelqu’un avant de continuer 😈');return}if(idx<questions.length-1){idx++;render();return}if(db){await db.ref(`ffy2026/submissions/${chosenVoter}/completed`).set(true);await db.ref(`ffy2026/submissions/${chosenVoter}/completedAt`).set(firebase.database.ServerValue.TIMESTAMP)}localStorage.setItem('ffy_completed','true');el('quiz').classList.add('hidden');el('done').classList.remove('hidden')};
+</script></body></html>
