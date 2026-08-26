@@ -109,7 +109,7 @@ function renderFrom(subs){
 
 if(db){
   // Mise à jour automatique à chaque nouveau vote
-  db.ref('submissions').on('value', snap => renderFrom(snap.val()||{}));
+  db.ref('ffy2026/submissions').on('value', snap => renderFrom(snap.val()||{}));
 }else{
   renderFrom(JSON.parse(localStorage.getItem('quiz_submissions')||'{}'));
 }
